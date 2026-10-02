@@ -91,7 +91,7 @@ här gör vi g_ledare till mappens ägargruppen och andra raden så att endast r
 
 och nu Gemensamt mappen
 ```
-sudo chmod 700 /projekt/Gemensamt
+sudo chmod 700 /Projekt/Gemensamt
 sudo setfacl -m g:g_ledare:rwx,g:g_personal:rwx /Projekt/Gemensamt
 ```
 första raden tar bort allas behörigheter förutom roots. andra ger båda grupperna behörighet att skriva, titta och skapa filer och mappar men ingen övrig kan det (förutom root)
@@ -101,3 +101,110 @@ sen måste vi göra så att nya filer och undermappar ärver gruppbehörigheten
 sudo setfacl -d -m u::rwx,g::---,g:g_ledare:rwx,g:g_personal:rwx,m::rwx,o::--- /Projekt/Gemensamt
 ```
 detta gör så att vanliga nya textfiler får normalt läs och skrivrättigheter för båda grupperna, utan körbehörighet
+
+nu ska vi testa att det faktiskt funkar
+```
+sudo -iu alice
+echo "hello world! > /Group/Gemensamt/test.txt
+cat /Group/Gemensamt/test.txt
+Hello world!
+```
+Den funkar. vi gick in i alice profil och skapade en test fil. sedan körde vi den och det funkade
+
+nu går vi istället in i bob och ser att han inte kommer åt Ledningsmappen samt kan läsa test filen
+```
+exit
+sudo -ui bob
+ls /Projekt/Ledning
+ls: cannot open directory ´/Projekt/Ledning´: Permission denied
+cat /Projekt/Gemensamt/test.txt
+Hello world!
+echo "Bob kan också skriva" >> /Projekt/Gemensamt/test.txt
+cat /Projekt/Gemensamt/test.txt
+Hello world! 
+Bob kan också skriva
+```
+
+och alice kan skriva och fixa i sin egen Ledningsmapp
+```
+exit
+sudo -iu alice
+echo "hello world! > /Group/Ledning/test.txt
+cat /Group/Ledning/test.txt
+Hello world!
+```
+
+<br><br>
+
+**Windows OS**<br>
+Skapar grupperna och användarna samt placera in dom rätt.
+```
+net localgroup g_ledare /add
+net localgroup g_personal /add
+
+net user alice /add
+net user bob /add
+
+net localgroup g_ledare alice /add
+net localgroup g_personal bob /add
+```
+
+skapa huvudmappen
+```
+mkdir C:\Projekt
+```
+
+sätter behörighet på mappen
+```
+icacls C:\Projekt /inheritance:r
+icacls C:\Projekt /grant:r "*S-1-5-32-544:(OI)(CI)F" "*S-1-5-18:(OI)(CI)F" "g_ledare:RX" "g_personal:RX"
+```
+Raden icacls C:\Projekt /inheritance:r stänger av arvet från C:\ och tar bort alla ärvda behörigheter, så mappen börjar helt tom.
+Raden icacls C:\Projekt /grant:r ... ger sedan att g_ledare och g_personal har bara rätt att öppna och lista C:\Projekt, utan arv nedåt.
+
+Nu skapar vi nudermapparna och sätter deras behörighet
+```
+mkdir C:\Projekt\Gemensamt
+mkdir C:\Projekt\Ledning
+
+icacls C:\Projekt\Gemensamt /grant:r "g_ledare:(OI)(CI)M" "g_personal:(OI)(CI)M"
+icacls C:\Projekt\Ledning /grant:r "g_ledare:(OI)(CI)M"
+```
+M betyder Modify, alltså ändra. Det ger rätt att läsa, skriva, skapa och ta bort innehåll. Det motsvarar behörigheterna som Linux-mappar med rwx ger.
+
+Då testar vi med alice profil och skapar en test fil i Ledning samt Gemensamt
+```
+runas /user:.\alice cmd
+echo Hello world! > C:\Projekt\Gemensamt\test.txt
+type C:\Projekt\Gemensamt\test.txt
+Hello world!
+
+echo Alice har tillgang > C:\Projekt\Ledning\ledningstest.txt
+type C:\Projekt\Ledning\ledningstest.txt
+Alice har tillgang
+```
+
+Nu testar vi med bob, om jag kommer in i Ledning och om vi har behörighet i test filen
+```
+runas /user:.\bob cmd
+
+dir C:\Projekt\Ledning
+
+type C:\Projekt\Gemensamt\test.txt
+Hello world!
+
+echo Bob kan ocksa skriva >> C:\Projekt\Gemensamt\test.txt
+type C:\Projekt\Gemensamt\test.txt
+Hello world!
+Bob kan ocksa skriva
+```
+
+Vi testar om behörigheten är ärvd
+```
+icacls C:\Projekt\Gemensamt\test.txt
+C:\Projekt\Gemensamt\test.txt DATORNAMN\g_ledare:(I)(M)
+LiamWindows\g_personal:(I)(M)
+BUILTIN\Administrators:(I)(F)
+NT AUTHORITY\SYSTEM:(I)(F)
+
+Successfully processed 1 files; Failed processing 0 files
