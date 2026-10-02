@@ -47,3 +47,57 @@ Vid vanlig HTTPS över TCP upprättar klinenten först en TCP-anslutning till se
  | Internetlagret | IP-Adresser används för adressering och routing mellan nätverk |
  | Nätverksåtkomstlagret | MAC-Adresser används för leverans över den lokala länken. Nya ramar skapas när trafiken passerar en router. |
 
+### Moment B: Jämförande OS- och behörighetsanalys
+
+**Linux OS (Ubuntu)**
+Först skappar vi grupperna
+```
+sudo groupadd g_ledare
+sudo groupadd g_personal
+```
+och användarna
+```
+sudo adduser alice
+sudo adduser bob
+```
+För att detta ska gå igenom måste vi använda root-behörigheter/administrationsrättigheter (sudo)
+
+Därefter lägger vi till användarna i grupperna
+```
+sudo usermod -G g_ledare alice
+sudo usermod -G g_personal bob
+```
+samma här använder vi root-behörigheter men även flaggan -G för att den ska ange användarnas extra grupper <br>
+
+Nu skapar vi mappstrukturen
+```
+sudo mkdir -p /Projekt/Gemensamt
+sudo mkdir /Projekt/Ledning
+```
+Använder vi root och -p för att det inte ska vara bara Gemensant som skapas utan också Projekt. sen i andra kommandoraden så behövs inte -p för att projekt finns redan <br>
+
+Nu ger vi behörigheter med hjälp av ACL
+```
+sudo chmod 700 /Projekt
+sudo setfacl -m g:g_ledare:rx,g:g_personal:rx /Projekt
+```
+först, behörighet endast för root, sen behörighet till båda grupperna att skriva och lsita mappen.<br><br>
+sedan Ledningsmappen
+```
+sudo chown root:g_ledare /Projekt/Ledning
+sudo chmod 770 /Projekt/Ledning
+```
+här gör vi g_ledare till mappens ägargruppen och andra raden så att endast root och medlemmarna i g_ledare har tillgång.
+
+och nu Gemensamt mappen
+```
+sudo chmod 700 /projekt/Gemensamt
+sudo setfacl -m g:g_ledare:rwx,g:g_personal:rwx /Projekt/Gemensamt
+```
+första raden tar bort allas behörigheter förutom roots. andra ger båda grupperna behörighet att skriva, titta och skapa filer och mappar men ingen övrig kan det (förutom root)
+
+sen måste vi göra så att nya filer och undermappar ärver gruppbehörigheten
+```
+sudo setfacl -d -m u::rwx,g::---,g:g_ledare:rwx,g:g_personal:rwx,m::rwx,o::--- /Projekt/Gemensamt
+```
+detta gör så att vanliga nya textfiler får normalt läs och skrivrättigheter för båda grupperna, utan körbehörighet
