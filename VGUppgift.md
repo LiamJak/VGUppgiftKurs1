@@ -189,6 +189,7 @@ Nu testar vi med bob, om jag kommer in i Ledning och om vi har behörighet i tes
 runas /user:.\bob cmd
 
 dir C:\Projekt\Ledning
+Access is denied
 
 type C:\Projekt\Gemensamt\test.txt
 Hello world!
@@ -202,9 +203,22 @@ Bob kan ocksa skriva
 Vi testar om behörigheten är ärvd
 ```
 icacls C:\Projekt\Gemensamt\test.txt
-C:\Projekt\Gemensamt\test.txt DATORNAMN\g_ledare:(I)(M)
-LiamWindows\g_personal:(I)(M)
+C:\Projekt\Gemensamt\test.txt LIAMWINDOWS\g_ledare:(I)(M)
+LIAMWINDOWS\g_personal:(I)(M)
 BUILTIN\Administrators:(I)(F)
 NT AUTHORITY\SYSTEM:(I)(F)
 
 Successfully processed 1 files; Failed processing 0 files
+```
+
+**Jämförelsen mellan Linux och Windows**
+
+| Fråga | Linux | Windows |
+| ----- | ----- | ------- |
+| Hur tilldelas rättigheterna? | Ägare, ägargrupp och övriga samt ACL för flera grupper | NTFS använder åtkomstlistor med rättigheter för användare och grupper |
+| Vad ärver nya filer i Gemensamt | Standard-ACL ger båda grupperna läs och skrivrättigheter. |	Filen ärver gruppernas behörigheter från mappen genom (OI)(CI).|
+| Viktig skillnad i arv | Vanlig chmod ger inte automatiskt motsvarande rättigheter på nya filer. Här används standard-ACL. |Ärftliga NTFS-poster kan föras vidare till nya filer och undermappar|
+| Vem blir ägare av en ny fil? | Skaparen | Skaparen |
+| Vilken grupp får den nya filen? | Normalt ägarens primära grupp | Ingen enskild "ägargrupp" styr åtkomst, ACL:en gör det |
+
+### Moment C: Spårbarhet & Överlämningsdokukentation
