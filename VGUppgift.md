@@ -271,4 +271,8 @@ Om du återskapar ska då:
 | bob kommer åt ledningen | Kontrollera att bob inte tillhör g_ledare och att inga andra rättigheter ger honom åtkomst |
 | En ny fil kan inte redigeras av båda | Kontrollera Standard-ACL i linux eller ärvda NTFS-behörigheter i windows. |
 
-Ange kontrollkommandon: id alice (id visar användar-id, primära grupp och alla andra grupper användaren tillhör), id bob, getfacl (ägare för mapp och ägargruppen) i Linux och net localgroup (vilka som är medlemar i den gruppen) g_ledare, net localgroup g_personal, icalcs i Windows.
+Ange kontrollkommandon: id alice (id visar användar-id, primära grupp och alla andra grupper användaren tillhör), id bob, getfacl (ägare, ägargrupp och hela ACL-listan på en fil eller mapp) t.ex getfacl /Projekt/Gemensamt i Linux och net localgroup g_ledare (vilka som är medlemar i den gruppen), net localgroup g_personal, icacls t.ex icacls C:\Projekt\Gemensamt\test.txt Windows.
+
+testerna i Moment B ska köras efter återställning av miljön. Rekomenderas att dokumentera reultaten med kommandoutskrift och jämföra dem med de förväntade resultaten för att kontrollera att återställningen lyckades samt återskapningen lyckades
+
+ commit -m "vad jag hinner för Moment C"
