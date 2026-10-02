@@ -159,7 +159,8 @@ sätter behörighet på mappen
 icacls C:\Projekt /inheritance:r
 icacls C:\Projekt /grant:r "*S-1-5-32-544:(OI)(CI)F" "*S-1-5-18:(OI)(CI)F" "g_ledare:RX" "g_personal:RX"
 ```
-Raden icacls C:\Projekt /inheritance:r stänger av arvet från C:\ och tar bort alla ärvda behörigheter, så mappen börjar helt tom.
+Raden icacls C:\Projekt /inheritance:r stänger av arvet från C:\ och tar bort alla ärvda behörigheter.
+
 Raden icacls C:\Projekt /grant:r ... ger sedan att g_ledare och g_personal har bara rätt att öppna och lista C:\Projekt, utan arv nedåt.
 
 Nu skapar vi nudermapparna och sätter deras behörighet
@@ -222,3 +223,52 @@ Successfully processed 1 files; Failed processing 0 files
 | Vilken grupp får den nya filen? | Normalt ägarens primära grupp | Ingen enskild "ägargrupp" styr åtkomst, ACL:en gör det |
 
 ### Moment C: Spårbarhet & Överlämningsdokukentation
+
+**omfattning**
+Dokumentation om behörighetstrukturen i Linux (Ubuntu) Miljön (POSIX-behörigheter och ACL) och Windows Miljön (NTFS ACL med icacls). Detta ska räcka för att man ska kunna bygga om och verifiera utan att ställa frågor.
+
+**Miljööversikt**
+| Egenskap | Linux | Windows |
+| --- | --- | --- |
+| Operativsystem | Ubuntu 25.04 | Windows 11 |
+| Datornamn | LiamsUbuntu | LiamWindows |
+| Plattform | Oracle Virtualbox | Oracle Virtualbox |
+| Rotmap | /Projekt | C:\Projekt |
+
+Kommandon för Windows körs i CMD som administratör och Linux Bash med hjälp utav sudo. Behörighetstesterna körs därefter med alice respektive bobs profil
+
+
+Krav
+| Typ | namn | Detalj |
+| --- | --- | --- |
+| Grupp | g_ledare | chefer/ledare |
+| Grupp | g_personal | Övrig personal |
+| Användare | alice | Medlem i g_ledare |
+| Användare | bob | Medlem i g_personal |
+
+| Map | g_personal (bob) | g_ledare (alice) |
+| --- | --- | --- |
+| Projekt/Gemensamt | Läsa och skriva | Läsa och skriva |
+| Projekt/Ledning | Ingen åtkomst | Läsa och Skriva |
+särkrav: en testfil i Gemensamt ska kunna redigeras av båda. g_personal ska nekas åtkomst till Ledning.
+
+**Uppbygnad eller återställning**
+Om mapparna, grupperna eller användarna försvinner kan strukturen återskapas med instruktionerna i Moment B. Kontrollera först vilka delar som finns kvar och gör sedan de steg som saknas. Existernade användare och grupper behöver inte skapas igen.
+<br>
+Om bara behörigheterna har blivit fel återställs de enligt behörighetskommandona i Moment B. Kontrollera även rättigheterna på existerande filer, eftersom standard-ACL i Linux endast påverkar nya filer och undermappar.
+
+Om du återskapar ska då:
+- alice och bob ska kunna läsa pch redogera samma fil i Gemesamt.
+- alice ska kunna skapa och läsa filer i Ledining.
+- bob ska nekas åtkomst till ledning.
+- Nya filer i Gemensamt ska få avsedda ärvda behörigheter.
+<br>
+
+**Problem som kan uppstå**
+| Problem | Kontroll |
+| --- | --- |
+| Användare nekas åtkomst till Gemensamt | Kontrollera gruppmedlemskap och behörighter på både Projket, Gemensamt och filen. på Linux (ls -l / för mapp ls -ld) och windows (icalcs) |
+| bob kommer åt ledningen | Kontrollera att bob inte tillhör g_ledare och att inga andra rättigheter ger honom åtkomst |
+| En ny fil kan inte redigeras av båda | Kontrollera Standard-ACL i linux eller ärvda NTFS-behörigheter i windows. |
+
+Ange kontrollkommandon: id alice (id visar användar-id, primära grupp och alla andra grupper användaren tillhör), id bob, getfacl (ägare för mapp och ägargruppen) i Linux och net localgroup (vilka som är medlemar i den gruppen) g_ledare, net localgroup g_personal, icalcs i Windows.
